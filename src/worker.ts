@@ -37,23 +37,24 @@ await model.initialize((event) =>
 );
 
 // Constants
-const SYSTEM_TEMPLATE = `You are an experienced researcher and helpful AI assistant, expert at interpreting and answering questions based on provided sources. 
+const SYSTEM_TEMPLATE = `Du er norsk og en erfaren forsker og hjelpsom AI-assistent, ekspert på å tolke og svare på spørsmål basert på de tilgjengelige kildene.
 
-When you have relevant context:
-1. Use the provided context to give accurate, helpful answers
-2. If the context doesn't fully answer the question, say so and explain what additional information would be needed
-3. If you're unsure about something, be honest about your uncertainty
+Når du har relevant kontekst:
 
-When you don't have relevant context:
-1. Provide helpful general responses based on your knowledge
-2. Be conversational and engaging while remaining professional
-3. If you can't answer something, be honest about it
+Bruk den tilgjengelige konteksten for å gi nøyaktige og hjelpsomme svar
+Hvis konteksten ikke fullt ut svarer på spørsmålet, si fra og forklar hvilken ytterligere informasjon som trengs
+Hvis du er usikker på noe, vær ærlig om usikkerheten
+Når du ikke har relevant kontekst:
 
-Always aim to be:
-- Clear and concise
-- Accurate and helpful
-- Professional yet friendly
-- Honest about limitations`;
+Gi hjelpsomme generelle svar basert på din kunnskap
+Vær samtalende og engasjerende, samtidig som du opprettholder profesjonalitet
+Hvis du ikke kan svare på noe, vær ærlig om det
+Streb alltid etter å være:
+
+Klar og kortfattet
+Nøyaktig og hjelpsom
+Profesjonell, men vennlig
+Ærlig om begrensninger`;
 
 // Types
 interface RAGState {
@@ -86,7 +87,7 @@ async function embedPDF(event: any) {
     message: {
       role: "assistant",
       content:
-        "Document has been processed successfully! You can now ask questions about its contents.",
+        "Dokumentet har blitt behandlet vellykket! Du kan nå stille spørsmål om innholdet.",
     },
   });
 
@@ -129,11 +130,11 @@ async function summarizeContextNode(
   const summarizePrompt = ChatPromptTemplate.fromMessages([
     [
       "system",
-      "You are an AI assistant that helps summarize context documents. Create a brief, coherent summary of the provided documents that captures their key points and relevance to the user's question.",
+      "Du er en AI-assistent som hjelper til med å oppsummere kontekstdokumenter. Lag en kortfattet, sammenhengende oppsummering av de relevante dokumentene som fanger deres hovedpunkter og betydning for brukerens spørsmål.",
     ],
     [
       "user",
-      `Please summarize the following documents in relation to this question: "{userMessage}"\n\nDocuments:\n {contextDocs}`,
+      `Vennligst oppsummer de følgende dokumentene i forhold til dette spørsmålet.: "{userMessage}"\n\nDocuments:\n {contextDocs}`,
     ],
   ]);
 
@@ -169,7 +170,7 @@ async function rephraseQuestionNode(
   const rephrasePrompt = ChatPromptTemplate.fromMessages([
     [
       "system",
-      "You are an AI assistant that helps rephrase questions to be more search-friendly. Keep the rephrased question concise and focused.",
+      "Du er en AI-assistent som hjelper med å omformulere spørsmål for å gjøre dem mer søkervennlige. Hold det omformulerte spørsmålet kort og fokusert.",
     ],
     ["placeholder", "{messages}"],
     ["user", originalQuery],
@@ -206,7 +207,7 @@ async function generateResponseNode(
     responseChainPrompt = ChatPromptTemplate.fromMessages([
       [
         "system",
-        "You are a helpful AI assistant. Please provide clear, informative, and engaging responses to help users with their questions. If you don't know something, be honest about it.",
+        "Du er en hjelpsom AI-assistent. Vennligst gi klare, informative og engasjerende svar for å hjelpe brukere med spørsmålene deres. Hvis du ikke vet noe, vær ærlig om det.",
       ],
       // ["placeholder", "{messages}"],
       ["user", userMessage],
@@ -223,11 +224,11 @@ async function generateResponseNode(
       ["system", SYSTEM_TEMPLATE],
       [
         "user",
-        "When responding to me, use the following documents as context:\n<context>\n{context}\n</context>",
+        "Når du svarer meg, bruk følgende dokumenter som kontekst.:\n<context>\n{context}\n</context>",
       ],
       [
         "assistant",
-        "I'll help answer your questions using the provided documents as context. If I can not find the answer in the documents, I will try loook carefully at the question and check the context. If I can't find the answer in the context, I'll provide a helpful general response.",
+        "Jeg vil hjelpe deg med å svare på spørsmålene dine ved å bruke de tilgjengelige dokumentene som kontekst. Hvis jeg ikke finner svaret i dokumentene, vil jeg nøye vurdere spørsmålet og sjekke konteksten. Hvis jeg fortsatt ikke finner svaret i konteksten, vil jeg gi et hjelpsomt generelt svar.",
       ],
       ["user", userMessage],
       // ["placeholder", "{messages}"],
@@ -283,6 +284,9 @@ async function generateRAGResponse(
     )
     .addConditionalEdges("__start__", async (state) => {
       console.log("generateRAGResponse: state", state);
+      if (state.messages.length === 1) {
+        return "generateResponseNode";
+      }
       if (state.messages.length > 1) {
         return "rephraseQuestionNode";
       }
@@ -327,6 +331,28 @@ async function generateRAGResponse(
 }
 
 const queryEvent = async (event: any) => {
+  console.log(vectorstore.docstore.length);
+  if (!vectorstore.docstore.length) {
+    const result = await model.invoke([
+      {
+        role: "system",
+        content:
+          "Du er Norsk og en erfaren forsker og hjelpsom AI-assistent fra ThuHuynh.no",
+      },
+      {
+        role: "user",
+        content: "Hei!",
+      },
+    ]);
+    console.log(result);
+
+    self.postMessage({
+      type: "complete",
+      message: { role: "assistant", content: result.content },
+    });
+
+    return;
+  }
   try {
     console.log("Starting queryEvent with data:", event.data);
     const response = await generateRAGResponse(

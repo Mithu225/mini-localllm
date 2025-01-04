@@ -25,7 +25,6 @@ export const useLLMWorker = () => {
   };
 
   const handleInitProgressMessage = (e: MessageEvent) => {
-    console.log(e.data);
     setLoadingModelProgress({
       ...e.data.data,
       ...handleModelProgessText(e.data.data.text),
@@ -33,10 +32,14 @@ export const useLLMWorker = () => {
   };
 
   const handleModelProgessText = (message: String) => {
+    console.log("handleModelProgessText: message", message);
     if (
-      ["Fetching param cache", "Loading model from cache"].some((item) =>
-        message.includes(item)
-      )
+      [
+        "Fetching param cache",
+        "Loading model from cache",
+        "Loading GPU",
+        "Finish loading",
+      ].some((item) => message.includes(item))
     ) {
       // Extract the part before the colon
       const loadingPart = message.split(":")[0];
@@ -54,8 +57,13 @@ export const useLLMWorker = () => {
           percentage: percentage.toFixed(2),
           loadingPart: loadingPart.replace(
             "Loading model from cache",
-            "Laster modell fra hurtigbufferet"
+            "Laster modell fra hurtigbufferet "
           ),
+        };
+      } else {
+        return {
+          percentage: 100,
+          loadingPart: message,
         };
       }
     }

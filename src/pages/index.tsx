@@ -95,6 +95,20 @@ function App() {
   const isModelLoading =
     loadingModelProgress.loadingPart && loadingModelProgress.progress !== 1;
 
+  useEffect(() => {
+    if (!isModelLoading) {
+      postMessage({
+        type: "query",
+        messages: [
+          {
+            role: "user",
+            content: `Hei!`,
+          },
+        ],
+      });
+    }
+  }, [isModelLoading]);
+
   return (
     <div className="flex flex-col h-screen">
       {isModelLoading && (
@@ -152,32 +166,6 @@ function App() {
           </div>
 
           <div className="p-4 flex flex-col gap-2">
-            {/* <form onSubmit={handleUpload} className="mb-4">
-              <div className="flex items-center space-x-2">
-                <Input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept=".pdf"
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 rounded-xl flex items-center space-x-2 text-gray-100 transition-colors duration-200"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>{selectedPDF ? selectedPDF.name : "Choose PDF"}</span>
-                </button>
-                <InteractiveHoverButton
-                  type="submit"
-                  disabled={!selectedPDF || workerIsLoading}
-                  text="Upload"
-                  iconComponent={<ArrowUp />}
-                />
-              </div>
-            </form> */}
-
             <form
               onSubmit={handleSubmit}
               className="flex flex-col space-y-5 w-full max-w-3xl"
@@ -198,7 +186,7 @@ function App() {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Type your message..."
+                    placeholder="Skriv meldingen din..."
                     disabled={workerIsLoading}
                     className="h-14 px-5"
                   />
