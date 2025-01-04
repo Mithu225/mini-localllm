@@ -57,7 +57,8 @@ module.exports = {
   		},
   		animation: {
   			grid: 'grid 15s linear infinite',
-  			'shiny-text': 'shiny-text 8s infinite'
+  			'shiny-text': 'shiny-text 8s infinite',
+  			gradient: 'gradient 8s linear infinite'
   		},
   		keyframes: {
   			grid: {
@@ -74,6 +75,11 @@ module.exports = {
   				},
   				'30%, 60%': {
   					'background-position': 'calc(100% + var(--shiny-width)) 0'
+  				}
+  			},
+  			gradient: {
+  				to: {
+  					backgroundPosition: 'var(--bg-size) 0'
   				}
   			}
   		}

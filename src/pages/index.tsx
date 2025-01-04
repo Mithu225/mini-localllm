@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowRightIcon,
   ArrowUp,
+  ChevronRight,
   Paperclip,
   Send,
   Upload,
@@ -18,6 +19,9 @@ import { Button } from "@/components/ui/button";
 import RetroGrid from "@/components/ui/retro-grid";
 import classnames from "classnames";
 import AnimatedShinyText from "@/components/ui/animated-shiny-text";
+import SparklesText from "@/components/ui/sparkles-text";
+import AnimatedGradientText from "@/components/ui/animated-gradient-text";
+import TypingAnimation from "@/components/ui/typing-animation";
 
 function App() {
   const [selectedPDF, setSelectedPDF] = useState<File | null>(null);
@@ -88,28 +92,33 @@ function App() {
     setWorkerIsLoading(true);
   };
 
-  console.log(loadingModelProgress);
+  const isModelLoading =
+    loadingModelProgress.loadingPart && loadingModelProgress.progress !== 1;
 
   return (
     <div className="flex flex-col h-screen">
-      <div
-        className={classnames(
-          "flex justify-center items-center w-full h-full",
-          { hidden: loadingModelProgress.progress == 1 }
-        )}
-      >
-        <div className="z-10 flex min-h-64 items-center justify-center">
-          <div
-            className={classnames(
-              "group rounded-full border border-black/5 bg-neutral-100 text-base text-white transition-all ease-in hover:cursor-pointer hover:bg-neutral-200 dark:border-white/5 dark:bg-neutral-900 dark:hover:bg-neutral-800"
-            )}
-          >
-            <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-1 transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
-              <span>✨ {loadingModelProgress.text}</span>
-            </AnimatedShinyText>
+      {isModelLoading && (
+        <div
+          className={classnames(
+            "flex justify-center items-center w-full h-full"
+          )}
+        >
+          <div className="z-10 flex flex-col gap-5 min-h-64 items-center justify-center">
+            <div
+              className={classnames(
+                "group rounded-full border border-black/5 bg-neutral-100 text-base text-white transition-all ease-in hover:cursor-pointer hover:bg-neutral-200 dark:border-white/5 dark:bg-neutral-900 dark:hover:bg-neutral-800"
+              )}
+            >
+              <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-1 transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
+                <span>✨ {loadingModelProgress.loadingPart}</span>
+              </AnimatedShinyText>
+            </div>
+
+            <SparklesText text={`${loadingModelProgress.percentage}%`} />
           </div>
         </div>
-      </div>
+      )}
+
       <div
         className={classnames("flex-1 overflow-hidden", {
           hidden: loadingModelProgress.progress !== 1,
@@ -221,6 +230,26 @@ function App() {
           </div>
         </div>
       </div>
+
+      {isModelLoading && (
+        <div className="z-10 flex flex-col gap-10 min-h-64 items-center justify-center">
+          <TypingAnimation className="text-md text-gray-500">
+            Det kan ta litt tid å laste modellen til nettleseren din, men når
+            det er fullført, vil du kunne bruke den offline.
+          </TypingAnimation>
+          <AnimatedGradientText>
+            ❤️ <hr className="mx-2 h-4 w-px shrink-0 bg-gray-300" />{" "}
+            <span
+              className={classnames(
+                `inline animate-gradient bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent`
+              )}
+            >
+              Utviklet av ThuHuynh.no
+            </span>
+          </AnimatedGradientText>
+        </div>
+      )}
+
       <ToastContainer
         position="top-right"
         autoClose={3000}
