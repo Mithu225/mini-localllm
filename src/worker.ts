@@ -8,7 +8,11 @@ import {
 import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
 import { VoyVectorStore } from "@langchain/community/vectorstores/voy";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { AIMessageChunk, MessageContent, type BaseMessage } from "@langchain/core/messages";
+import {
+  AIMessageChunk,
+  MessageContent,
+  type BaseMessage,
+} from "@langchain/core/messages";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { ChatWebLLM } from "@langchain/community/chat_models/webllm";
 import { Document } from "@langchain/core/documents";
@@ -25,11 +29,11 @@ const voyClient = new VoyClient();
 const vectorstore = new VoyVectorStore(voyClient, embeddings);
 
 const model = new ChatWebLLM({
-  model: 'Llama-3.2-3B-Instruct-q4f32_1-MLC',
+  model: "Llama-3.2-3B-Instruct-q4f32_1-MLC",
 });
 
 await model.initialize((event) =>
-  self.postMessage({ type: "init_progress", data: event }),
+  self.postMessage({ type: "init_progress", data: event })
 );
 
 // Constants
@@ -61,7 +65,7 @@ interface RAGState {
 
 // PDF Processing
 async function embedPDF(event: any) {
-  const pdfBlob = event.data.pdf as Blob
+  const pdfBlob = event.data.pdf as Blob;
   const pdfLoader = new WebPDFLoader(pdfBlob, { parsedItemSeparator: " " });
   const docs = await pdfLoader.load();
 
@@ -74,13 +78,16 @@ async function embedPDF(event: any) {
 
   self.postMessage({ type: "log", data: splitDocs });
 
-
   await vectorstore.addDocuments(splitDocs);
 
   // Send completion message to inform user
   self.postMessage({
     type: "complete",
-    message: { role: "assistant", content: "Document has been processed successfully! You can now ask questions about its contents." }
+    message: {
+      role: "assistant",
+      content:
+        "Document has been processed successfully! You can now ask questions about its contents.",
+    },
   });
 
   return {};
@@ -93,8 +100,12 @@ async function retrieveSourceDocumentsNode(
 ): Promise<{ sourceDocuments: Document[] }> {
   console.log(state, "retrieveSourceDocumentsNode: state");
   try {
-    const retrieverQuery = state.rephrasedQuestion ?? state.messages.at(-1)?.content as string;
-    const retriever = vectorstore.asRetriever({ k: 10, searchKwargs: { lambda: 0.75 } });
+    const retrieverQuery =
+      state.rephrasedQuestion ?? (state.messages.at(-1)?.content as string);
+    const retriever = vectorstore.asRetriever({
+      k: 10,
+      searchKwargs: { lambda: 0.75 },
+    });
     const docs = await retriever.invoke(retrieverQuery, config);
     console.log("retrieveSourceDocumentsNode: docs", docs);
     return { sourceDocuments: docs };
@@ -116,23 +127,33 @@ async function summarizeContextNode(
   }
 
   const summarizePrompt = ChatPromptTemplate.fromMessages([
-    ["system", "You are an AI assistant that helps summarize context documents. Create a brief, coherent summary of the provided documents that captures their key points and relevance to the user's question."],
-    ["user", `Please summarize the following documents in relation to this question: "{userMessage}"\n\nDocuments:\n {contextDocs}`],
+    [
+      "system",
+      "You are an AI assistant that helps summarize context documents. Create a brief, coherent summary of the provided documents that captures their key points and relevance to the user's question.",
+    ],
+    [
+      "user",
+      `Please summarize the following documents in relation to this question: "{userMessage}"\n\nDocuments:\n {contextDocs}`,
+    ],
   ]);
 
-  const userMessage = state.rephrasedQuestion ?? state.messages.at(-1)?.content as string;
+  const userMessage =
+    state.rephrasedQuestion ?? (state.messages.at(-1)?.content as string);
 
   const contextDocs = state.sourceDocuments
     .map((doc, i) => `<doc>${doc.pageContent}</doc>`)
     .join("\n\n");
 
-  const formattedPrompt = await summarizePrompt.invoke({
-    userMessage: userMessage,
-    contextDocs: contextDocs,
-  }, config);
-  
+  const formattedPrompt = await summarizePrompt.invoke(
+    {
+      userMessage: userMessage,
+      contextDocs: contextDocs,
+    },
+    config
+  );
+
   const response = await model.invoke(formattedPrompt, config);
-  
+
   return { contextSummary: response };
 }
 
@@ -144,19 +165,25 @@ async function rephraseQuestionNode(
 ): Promise<{ rephrasedQuestion: MessageContent }> {
   console.log(state, "rephraseQuestionNode: state");
   const originalQuery = state.messages.at(-1)?.content as string;
-  
+
   const rephrasePrompt = ChatPromptTemplate.fromMessages([
-    ["system", "You are an AI assistant that helps rephrase questions to be more search-friendly. Keep the rephrased question concise and focused."],
+    [
+      "system",
+      "You are an AI assistant that helps rephrase questions to be more search-friendly. Keep the rephrased question concise and focused.",
+    ],
     ["placeholder", "{messages}"],
     ["user", originalQuery],
   ]);
 
-  const formattedPrompt = await rephrasePrompt.invoke({
-    messages: state.messages,
-    input: originalQuery,
-  }, config);
+  const formattedPrompt = await rephrasePrompt.invoke(
+    {
+      messages: state.messages,
+      input: originalQuery,
+    },
+    config
+  );
   const response = await model.invoke(formattedPrompt, config);
-  
+
   console.log(response, "rephraseQuestionNode: response");
   return { rephrasedQuestion: response.content };
 }
@@ -168,7 +195,8 @@ async function generateResponseNode(
   config: RunnableConfig
 ): Promise<{ messages: any[] }> {
   console.log("generateResponseNode: state", state);
-  const userMessage  = state.rephrasedQuestion ?? state.messages.at(-1)?.content as string
+  const userMessage =
+    state.rephrasedQuestion ?? (state.messages.at(-1)?.content as string);
 
   let responseChainPrompt;
   let formattedPrompt;
@@ -176,17 +204,20 @@ async function generateResponseNode(
   if (!state.contextSummary) {
     // If no contextSummary, use a general conversation prompt
     responseChainPrompt = ChatPromptTemplate.fromMessages([
-      ["system", "You are a helpful AI assistant. Please provide clear, informative, and engaging responses to help users with their questions. If you don't know something, be honest about it."],
-      // ["placeholder", "{messages}"],
       [
-        "user",
-        userMessage
+        "system",
+        "You are a helpful AI assistant. Please provide clear, informative, and engaging responses to help users with their questions. If you don't know something, be honest about it.",
       ],
+      // ["placeholder", "{messages}"],
+      ["user", userMessage],
     ]);
 
-    formattedPrompt = await responseChainPrompt.invoke({
-      messages: state.messages,
-    }, config);
+    formattedPrompt = await responseChainPrompt.invoke(
+      {
+        messages: state.messages,
+      },
+      config
+    );
   } else {
     responseChainPrompt = ChatPromptTemplate.fromMessages([
       ["system", SYSTEM_TEMPLATE],
@@ -198,10 +229,7 @@ async function generateResponseNode(
         "assistant",
         "I'll help answer your questions using the provided documents as context. If I can not find the answer in the documents, I will try loook carefully at the question and check the context. If I can't find the answer in the context, I'll provide a helpful general response.",
       ],
-      [
-        "user",
-        userMessage
-      ],
+      ["user", userMessage],
       // ["placeholder", "{messages}"],
     ]);
 
@@ -210,14 +238,14 @@ async function generateResponseNode(
         messages: state.messages,
         context: state.contextSummary,
       },
-      config,
+      config
     );
   }
 
   const response = await model.invoke(formattedPrompt, config);
 
   console.log(response, "generateResponseNode: response");
-  
+
   if (typeof response === "string") {
     return { messages: [{ role: "assistant", content: response }] };
   } else {
@@ -256,7 +284,7 @@ async function generateRAGResponse(
     .addConditionalEdges("__start__", async (state) => {
       console.log("generateRAGResponse: state", state);
       if (state.messages.length > 1) {
-        return "rephraseQuestionNode"; 
+        return "rephraseQuestionNode";
       }
       return "generateResponseNode";
     })
@@ -322,24 +350,26 @@ const queryEvent = async (event: any) => {
 
     return response;
   } catch (error) {
-    console.error("Error in queryEvent:", error);
-    self.postMessage({
-      type: "error",
-      error: error?.message || "An error occurred while processing your request",
-    });
+    if (error instanceof Error) {
+      console.error("Error in queryEvent:", error);
+      self.postMessage({
+        type: "error",
+        error:
+          error?.message || "An error occurred while processing your request",
+      });
+    }
   }
 };
-
 
 const events: any = {
   embed: embedPDF,
   query: queryEvent,
-}
+};
 
 // Message Handler
 self.addEventListener("message", async (event: { data: any }) => {
   try {
-    const eventFunc = events?.[event.data.type] || 'init';
+    const eventFunc = events?.[event.data.type] || "init";
 
     self.postMessage({
       type: "log",
@@ -349,7 +379,6 @@ self.addEventListener("message", async (event: { data: any }) => {
     await eventFunc(event);
   } catch (error) {
     console.error("Error in worker:", error);
-    console.trace(error?.stack)
     self.postMessage({
       type: "error",
       error: error instanceof Error ? error.message : String(error),
