@@ -333,17 +333,25 @@ async function generateRAGResponse(
 const queryEvent = async (event: any) => {
   console.log(vectorstore.docstore.length);
   if (!vectorstore.docstore.length) {
-    const result = await model.invoke([
-      {
-        role: "system",
-        content:
-          "Du er Norsk og en erfaren forsker og hjelpsom AI-assistent fra ThuHuynh.no",
-      },
-      {
-        role: "user",
-        content: "Hei!",
-      },
-    ]);
+    console.log(event.data.messages, "event.data.messages");
+
+    const hasSystemPrompt = event.data.messages.find(
+      (elm: any) => elm.role === "system"
+    );
+    let result;
+    if (hasSystemPrompt) {
+      result = await model.invoke(event.data.messages);
+    } else {
+      result = await model.invoke([
+        {
+          role: "system",
+          content:
+            "Du er Norsk og en erfaren forsker og hjelpsom AI-assistent fra ThuHuynh.no. Svaret bør være kort og maks 100 words eller 100 tokens.",
+        },
+        event.data.messages[event.data.messages.length - 1],
+      ]);
+    }
+
     console.log(result);
 
     self.postMessage({

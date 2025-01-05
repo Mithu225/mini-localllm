@@ -35,6 +35,7 @@ export const useLLMWorker = () => {
     console.log("handleModelProgessText: message", message);
     if (
       [
+        "Start to fetch params",
         "Fetching param cache",
         "Loading model from cache",
         "Loading GPU",

@@ -26,6 +26,7 @@ import TypingAnimation from "@/components/ui/typing-animation";
 function App() {
   const [selectedPDF, setSelectedPDF] = useState<File | null>(null);
   const [input, setInput] = useState("");
+  const [startHelllo, setStartHello] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const {
@@ -96,18 +97,25 @@ function App() {
     loadingModelProgress.loadingPart && loadingModelProgress.progress !== 1;
 
   useEffect(() => {
-    if (!isModelLoading) {
+    if (!isModelLoading && !startHelllo) {
       postMessage({
         type: "query",
         messages: [
           {
+            role: "system",
+            content:
+              "Du er Norsk og en erfaren forsker og hjelpsom AI-assistent fra ThuHuynh.no",
+          },
+          {
             role: "user",
-            content: `Hei!`,
+            content: "Hei!",
           },
         ],
       });
+
+      setStartHello(true);
     }
-  }, [isModelLoading]);
+  }, [isModelLoading, startHelllo]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -134,11 +142,11 @@ function App() {
       )}
 
       <div
-        className={classnames("flex-1 overflow-hidden", {
+        className={classnames("flex-1 overflow-hidden z-20", {
           hidden: loadingModelProgress.progress !== 1,
         })}
       >
-        <div className="container mx-auto h-full flex flex-col max-w-4xl">
+        <div className="container mx-auto h-full flex flex-col max-w-4xl  z-10">
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {workerMessages.map((message, index) => (
               <div
@@ -250,7 +258,7 @@ function App() {
         pauseOnHover
         theme="dark"
       />
-      {loadingModelProgress.progress !== 1 && <RetroGrid />}
+      <RetroGrid />
     </div>
   );
 }
