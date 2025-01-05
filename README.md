@@ -19,8 +19,8 @@ En kraftfull AI-agent for dokumentanalyse og spørsmål/svar direkte i nettleser
 
 - **Kjerneteknologier**
 
-  - Next.js 13+ (App Router)
-  - React 18
+  - Next.js 15+ (App Router)
+  - React 19
   - TypeScript
   - WebLLM
   - LangGraph
