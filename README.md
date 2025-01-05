@@ -27,8 +27,7 @@ En kraftfull AI-agent for dokumentanalyse og spørsmål/svar direkte i nettleser
   - Voy Vector Search
 
 - **AI-modeller**
-
-  - nomic-ai/nomic-embed-text-v1.5
+  - Llama-3.2-3B-Instruct-q4f32_1-MLC
   - nomic-ai/nomic-embed-text-v1.5
   - NB-Llama-3.2-3B-Instruct (in-progress)
   - Granite-Embedding-278m-multilingual (in-progress)
